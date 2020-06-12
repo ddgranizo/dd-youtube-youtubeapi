@@ -3,8 +3,6 @@ using Google.Apis.Services;
 using Google.Apis.Upload;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,46 +13,20 @@ namespace DD.Youtube.YoutubeApi
 {
     class Program
     {
-        public static async Task Main(string[] args)
+        static async Task Main(string[] args)
         {
-            var host = CreateHostBuilder(args).Build();
-            await RunAsync(host.Services);
+            await Upload();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureAppConfiguration(config =>
-                {
-                    config.AddJsonFile("AppSettings.json", optional: true);
-                })
-                .ConfigureServices((hostContext, services) =>
-                {
-                    //Add services
-                });
-
-        private static async Task RunAsync(IServiceProvider serviceProvider)
+        private static async Task Upload()
         {
-            try
-            {
-                await UploadVideo();
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error");
-                Console.WriteLine(ex.Message);
-            }
-        }
-
-
-        private static async Task UploadVideo()
-        {
-
             UserCredential credential;
             using (var stream = new FileStream("Secrets.json", FileMode.Open, FileAccess.Read))
             {
                 credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
                     GoogleClientSecrets.Load(stream).Secrets,
+                    // This OAuth 2.0 access scope allows an application to upload files to the
+                    // authenticated user's YouTube channel, but doesn't allow other types of access.
                     new[] { YouTubeService.Scope.YoutubeUpload },
                     "user",
                     CancellationToken.None
@@ -64,19 +36,18 @@ namespace DD.Youtube.YoutubeApi
             var youtubeService = new YouTubeService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
-                ApplicationName = "dd-youtube-youtubeapi",
+                ApplicationName = "dd-youtube-youtubeapi"
             });
 
             var video = new Video();
-            
             video.Snippet = new VideoSnippet();
             video.Snippet.Title = "Default Video Title";
             video.Snippet.Description = "Default Video Description";
             video.Snippet.Tags = new string[] { "tag1", "tag2" };
             video.Snippet.CategoryId = "22";
-            video.Status = new VideoStatus();
-            video.Status.PrivacyStatus = "unlisted";
             video.Snippet.ChannelId = "UClZY2Jh-lNQGa3j9KUIa82w";
+            video.Status = new VideoStatus();
+            video.Status.PrivacyStatus = "unlisted"; 
             var filePath = @"C:\Users\daniel.diazg\Desktop\gif.mp4";
 
             using (var fileStream = new FileStream(filePath, FileMode.Open))
@@ -88,6 +59,7 @@ namespace DD.Youtube.YoutubeApi
                 await videosInsertRequest.UploadAsync();
             }
         }
+
 
         static void videosInsertRequest_ProgressChanged(Google.Apis.Upload.IUploadProgress progress)
         {
@@ -109,17 +81,16 @@ namespace DD.Youtube.YoutubeApi
         }
 
 
-        private static async Task SearchVideos()
+        private static async Task Search()
         {
-            var youtubeService = new YouTubeService(new BaseClientService.Initializer()
-            {
-                ApiKey = "AIzaSyCZmKEbbXT0TpTTJMUJW2K26NV_hfrKzFs",
-                ApplicationName = "dd-youtube-youtubeapi",
-            });
-
-
             Console.WriteLine("Search term:");
             var searchTerm = Console.ReadLine();
+
+            var youtubeService = new YouTubeService(new BaseClientService.Initializer()
+            {
+                ApiKey = "REPLACE_APIKEY",
+                ApplicationName = "dd-youtube-youtubeapi",
+            });
 
             var searchListRequest = youtubeService.Search.List("snippet");
             searchListRequest.Q = searchTerm;
@@ -136,12 +107,10 @@ namespace DD.Youtube.YoutubeApi
                     case "youtube#video":
                         videos.Add(String.Format("{0} ({1})", searchResult.Snippet.Title, searchResult.Id.VideoId));
                         break;
-
                 }
             }
 
             Console.WriteLine(String.Format("Videos:\n{0}\n", string.Join("\n", videos)));
         }
-
     }
 }
