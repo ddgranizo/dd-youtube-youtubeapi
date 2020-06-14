@@ -3,6 +3,8 @@ using Google.Apis.Services;
 using Google.Apis.Upload;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +15,7 @@ namespace DD.Youtube.YoutubeApi
 {
     class Program
     {
+
         static async Task Main(string[] args)
         {
             await Upload();
@@ -20,6 +23,7 @@ namespace DD.Youtube.YoutubeApi
 
         private static async Task Upload()
         {
+
             UserCredential credential;
             using (var stream = new FileStream("Secrets.json", FileMode.Open, FileAccess.Read))
             {
